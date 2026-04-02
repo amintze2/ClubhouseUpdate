@@ -85,6 +85,47 @@ Open [http://localhost:3000](http://localhost:3000). With `NEXT_PUBLIC_DEV_MODE=
 
 ---
 
+## Testing in the Slugger platform
+
+The Slugger staging environment is at:
+```
+https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com/dashboard
+```
+
+The widget is registered there pointing at `https://clubhouse-ten-lovat.vercel.app`.
+
+### To test with real Slugger auth (no dev mode)
+
+1. Make sure `NEXT_PUBLIC_DEV_MODE` is **not set** in Vercel production:
+   ```bash
+   vercel env rm NEXT_PUBLIC_DEV_MODE production --yes
+   vercel --prod
+   ```
+
+2. Open the Slugger staging URL above and navigate to the Clubhouse Management widget.
+
+3. The app will authenticate via the Slugger postMessage flow. Check Vercel function logs for `Bootstrap called without a token` or `Slugger /api/users/me response:` to confirm the auth path being used:
+   ```bash
+   vercel logs https://clubhouse-ten-lovat.vercel.app
+   ```
+
+> **Note:** The Slugger staging environment's `/api/users/widget-token` endpoint currently returns 500, so `bootstrapToken` will be `false`. The app falls back to the user payload from `SLUGGER_AUTH`. Users without a `teamId` in the Slugger payload are assigned to **Test Team (id=11)**.
+
+### To reset back to dev mode
+
+Re-add the env var and redeploy:
+
+```bash
+printf "true" | vercel env add NEXT_PUBLIC_DEV_MODE production
+vercel --prod
+```
+
+> Use `printf` (not `echo`) — `echo` adds a trailing newline that corrupts environment variable values in Vercel.
+
+Once back in dev mode, the app bypasses the Slugger handshake and logs in using `NEXT_PUBLIC_DEV_USER_ROLE` / `NEXT_PUBLIC_DEV_USER_TEAM` / `NEXT_PUBLIC_DEV_USER_ID`. The dev toolbar at the bottom of the screen lets you switch users without redeploying.
+
+---
+
 ## Auth flow (production)
 
 ```
