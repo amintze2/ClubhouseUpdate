@@ -188,6 +188,10 @@ export async function POST(req: NextRequest) {
   // If teamId is missing from the payload (happens when Slugger widget-token
   // endpoint is down and the test account has no team assigned), fall back to
   // the existing team_id already stored for this user.
+  // Fallback team used when Slugger sends no teamId (e.g. widget-token endpoint
+  // down, or test account with no team assigned in Slugger).
+  const FALLBACK_TEAM_ID = 11; // "Test Team"
+
   let resolvedTeamId: number | null = isNaN(teamIdNum) ? null : teamIdNum;
   if (resolvedTeamId === null) {
     const { data: existing } = await supabase
@@ -195,12 +199,8 @@ export async function POST(req: NextRequest) {
       .select("team_id")
       .eq("slugger_user_id", identity.sluggerUserId)
       .single();
-    resolvedTeamId = existing?.team_id ?? null;
-    if (resolvedTeamId === null) {
-      console.error("Bootstrap: no teamId in payload and user not found in DB — cannot create user without team_id");
-      return NextResponse.json({ error: "User has no team assigned in Slugger" }, { status: 422 });
-    }
-    console.warn(`Bootstrap: teamId missing from payload for ${identity.email}, using stored team_id ${resolvedTeamId}`);
+    resolvedTeamId = existing?.team_id ?? FALLBACK_TEAM_ID;
+    console.warn(`Bootstrap: teamId missing from payload for ${identity.email}, using team_id ${resolvedTeamId}`);
   }
 
   const { data: user, error: upsertError } = await supabase
