@@ -50,7 +50,7 @@ export function Step3Food({ values, onChange }: Props) {
               onChange={() => onChange({ ...values, food_prep: null })}
               className="h-4 w-4 border-gray-300 text-blue-600"
             />
-            <span className="text-sm text-gray-700">We don't handle food</span>
+            <span className="text-sm text-gray-700">We don&apos;t handle food</span>
           </label>
         </div>
       </div>

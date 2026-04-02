@@ -27,6 +27,7 @@ export function GMReportsView() {
   useEffect(() => {
     if (!user) return;
     getIssues(supabase, user.team_id).then(setIssues).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.team_id, accessToken]);
 
   async function selectIssue(issue: IssueWithPlayer) {
@@ -75,6 +76,7 @@ export function GMReportsView() {
         supabase.removeChannel(channelRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleFlagToggle(issue: IssueWithPlayer) {

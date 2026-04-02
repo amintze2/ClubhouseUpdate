@@ -37,6 +37,7 @@ export function CMReportsView() {
   useEffect(() => {
     if (!user) return;
     getIssues(supabase, user.team_id).then(setIssues).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.team_id, accessToken]);
 
   async function selectIssue(issue: IssueWithPlayer) {
