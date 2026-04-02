@@ -1,6 +1,8 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 
+// Load .env.migration first (with override) so cloud creds take precedence over .env.local
+dotenv.config({ path: ".env.migration", override: true });
 dotenv.config({ path: ".env.local" });
 
 export function validateEnv(vars: string[]): void {

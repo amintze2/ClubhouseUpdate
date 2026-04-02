@@ -78,11 +78,13 @@ export function initSluggerAuth(options: InitSluggerAuthOptions): () => void {
 
   window.addEventListener("message", handleMessage);
 
-  // Send ready signal to parent
-  window.parent.postMessage(
-    { type: "SLUGGER_WIDGET_READY", widgetId: "clubhouse-management" },
-    "*"
-  );
+  // Send ready signal to each known Slugger origin (never use "*")
+  SLUGGER_ALLOWED_ORIGINS.forEach((origin) => {
+    window.parent.postMessage(
+      { type: "SLUGGER_WIDGET_READY", widgetId: "clubhouse-management" },
+      origin
+    );
+  });
 
   function cleanup() {
     clearTimeout(timeout);

@@ -55,14 +55,17 @@ async function verifyViaSluggerApi(
     });
     if (!res.ok) return null;
 
-    const data = await res.json();
+    const body = await res.json();
+    console.log("Slugger /api/users/me response:", JSON.stringify(body));
+    // Response shape: { success: true, data: { id, email, role, teamRole, ... } }
+    const u = body.data ?? body;
     return {
-      sluggerUserId: data.id ?? sluggerUser.id,
-      email: data.email ?? sluggerUser.email,
-      firstName: data.firstName ?? sluggerUser.firstName,
-      lastName: data.lastName ?? sluggerUser.lastName,
-      teamId: String(data.teamId ?? sluggerUser.teamId),
-      role: mapSluggerRole(sluggerUser.role),
+      sluggerUserId: String(u.id ?? sluggerUser.id),
+      email: u.email ?? sluggerUser.email,
+      firstName: u.firstName ?? sluggerUser.firstName,
+      lastName: u.lastName ?? sluggerUser.lastName,
+      teamId: String(u.teamId ?? sluggerUser.teamId),
+      role: mapSluggerRole(sluggerUser.role, u.teamRole),
     };
   } catch {
     return null;

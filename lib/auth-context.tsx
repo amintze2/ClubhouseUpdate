@@ -63,13 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const { user, session } = await res.json();
 
-          // Set session in Supabase client (in-memory only, no storage)
-          const supabase = createSupabaseClient();
-          await supabase.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: "",
-          });
-
           setState({ user, accessToken: session.access_token, isLoading: false, isAuthenticated: true, error: null });
         } catch (err) {
           setState({

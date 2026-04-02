@@ -1,6 +1,8 @@
 node_modules
 .next/
 .env.local
+.env.migration
 .claude/
 tsconfig.tsbuildinfo
 tsconfig.scripts.tsbuildinfo
+.vercel

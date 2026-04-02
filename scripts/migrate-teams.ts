@@ -1,4 +1,4 @@
-import { getOldClient, getNewClient, timer } from "./migrate-utils";
+import { getOldClient, getNewClient, timer, truncateTable } from "./migrate-utils";
 
 export async function migrateTeams(): Promise<void> {
   const old = getOldClient();
@@ -9,10 +9,12 @@ export async function migrateTeams(): Promise<void> {
   if (error) throw new Error(`Failed to read old teams: ${error.message}`);
   if (!rows || rows.length === 0) { console.log("  teams: 0 rows (nothing to migrate)"); return; }
 
-  const { error: upsertErr } = await neo
+  // teams has no unique constraint on team_name — truncate then insert
+  await truncateTable(neo, "teams");
+  const { error: insertErr } = await neo
     .from("teams")
-    .upsert(rows.map((r: any) => ({ team_name: r.team_name })), { onConflict: "team_name" });
-  if (upsertErr) throw new Error(`Failed to upsert teams: ${upsertErr.message}`);
+    .insert(rows.map((r: any) => ({ team_name: r.team_name })));
+  if (insertErr) throw new Error(`Failed to insert teams: ${insertErr.message}`);
 
   console.log(`  teams: ${rows.length} rows migrated (${elapsed()})`);
 }

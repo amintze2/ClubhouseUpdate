@@ -69,8 +69,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Onboarding-incomplete CM — render the page (onboarding wizard) without sidebar/nav
+  // Onboarding-incomplete CM — show wizard without sidebar; return null while redirect fires
   if (user.role === "clubhouse_manager" && !user.has_completed_onboarding) {
+    if (pathname !== "/onboarding") return null;
     return (
       <>
         {children}
