@@ -150,7 +150,7 @@ export default function ChecklistsPage() {
       <div className="p-4 max-w-2xl mx-auto">
         <UpcomingGamesWidget games={upcomingGames} />
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-lg font-semibold text-gray-900">Today's Tasks</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Today&apos;s Tasks</h1>
           <span className="text-sm text-gray-400">{doneCount}/{totalCount}</span>
         </div>
         {totalCount > 0 && (
