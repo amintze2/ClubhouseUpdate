@@ -38,6 +38,8 @@ interface InitSluggerAuthOptions {
 const SLUGGER_ALLOWED_ORIGINS: string[] = [
   "https://alpb-analytics.com",
   "https://www.alpb-analytics.com",
+  // Slugger staging environment (AWS ALB)
+  "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
   ...(process.env.SLUGGER_STAGING_ORIGIN
     ? [process.env.SLUGGER_STAGING_ORIGIN]
     : []),
@@ -79,13 +81,13 @@ export function initSluggerAuth(options: InitSluggerAuthOptions): () => void {
 
   window.addEventListener("message", handleMessage);
 
-  // Send ready signal to each known Slugger origin (never use "*")
-  SLUGGER_ALLOWED_ORIGINS.forEach((origin) => {
-    window.parent.postMessage(
-      { type: "SLUGGER_WIDGET_READY", widgetId: "clubhouse-management" },
-      origin
-    );
-  });
+  // Send ready signal to parent. Use "*" because the actual Slugger host
+  // may differ from alpb-analytics.com (e.g. AWS ALB in staging). This
+  // message contains no sensitive data — only the widget ID.
+  window.parent.postMessage(
+    { type: "SLUGGER_WIDGET_READY", widgetId: "clubhouse-management" },
+    "*"
+  );
 
   function cleanup() {
     clearTimeout(timeout);
