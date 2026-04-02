@@ -17,6 +17,8 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   /** Re-run the mock auth flow with a specific user (dev toolbar only). */
   switchDevUser: (payload: SluggerAuthPayload) => void;
+  /** Patch the in-memory user (e.g. after onboarding completes). */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -98,8 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     runAuth(payload);
   }
 
+  function updateUser(patch: Partial<User>) {
+    setState((prev) => ({
+      ...prev,
+      user: prev.user ? { ...prev.user, ...patch } : prev.user,
+    }));
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, switchDevUser }}>
+    <AuthContext.Provider value={{ ...state, switchDevUser, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

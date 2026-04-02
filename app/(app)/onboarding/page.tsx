@@ -18,7 +18,7 @@ import type { OnboardingAnswers } from "@/lib/api/onboarding";
 const TOTAL_STEPS = 7;
 
 export default function OnboardingPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -71,6 +71,7 @@ export default function OnboardingPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Request failed");
       }
+      updateUser({ has_completed_onboarding: true });
       router.replace("/recurring-tasks");
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Setup failed — please try again", "error");
