@@ -33,7 +33,6 @@ export async function getHomeGameSeries(
   if (gamesError) throw gamesError;
   if (!gamesData || gamesData.length === 0) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawGames = gamesData as any[];
 
   // Group into series: consecutive dates against the same opponent (2-day gap tolerance)
@@ -111,7 +110,6 @@ export async function getDietaryRestrictionsForTeams(
   if (playersError) throw playersError;
   if (!playersData || playersData.length === 0) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const players = playersData as any[];
   const playerIds = players.map((p: any) => p.id);
   const playerMap = new Map(players.map((p: any) => [p.id, p]));

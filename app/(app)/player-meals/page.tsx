@@ -37,7 +37,6 @@ export default function PlayerMealsPage() {
       .order("game_date", { ascending: true })
       .then(({ data, error }) => {
         if (error) { showToast("Failed to load meals", "error"); return; }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const planned: MealRow[] = (data ?? []).flatMap((g: any) => {
           const meal = Array.isArray(g.meals) ? g.meals[0] : g.meals;
           if (!meal || (!meal.pre_game_snack && !meal.post_game_meal)) return [];

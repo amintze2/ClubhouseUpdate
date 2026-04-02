@@ -135,7 +135,6 @@ export async function getSeriesEndedYesterday(
   if (error || !data || data.length === 0) return null;
 
   // Group into series: consecutive dates against the same opponent
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const games = data as any[];
 
   const series: { opponentName: string; dates: string[] }[] = [];
