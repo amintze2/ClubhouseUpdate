@@ -139,8 +139,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { token, sluggerUser } = body;
-  if (!token || !sluggerUser) {
-    return NextResponse.json({ error: "Missing token or sluggerUser" }, { status: 400 });
+  if (!sluggerUser) {
+    return NextResponse.json({ error: "Missing sluggerUser" }, { status: 400 });
+  }
+  if (!token) {
+    console.warn("Bootstrap called without a token — Slugger widget-token endpoint may be down. Falling back to payload.");
   }
 
   const jwtSecret = process.env.SUPABASE_JWT_SECRET;
@@ -156,6 +159,9 @@ export async function POST(req: NextRequest) {
   if (isDev) {
     // Dev mode: trust mock payload directly, skip external calls
     identity = verifyViaPayload(sluggerUser);
+  } else if (!token) {
+    // No bootstrap token (Slugger widget-token endpoint unavailable) — use payload directly
+    identity = verifyViaPayload(sluggerUser);
   } else {
     // Path 1: Slugger API
     const path1 = await verifyViaSluggerApi(token, sluggerUser);
@@ -166,8 +172,6 @@ export async function POST(req: NextRequest) {
       identity = verifyViaPayload(sluggerUser);
 
       // Path 3: Cognito — enhance with verified token if env vars set
-      // (Path 2 already gives us the identity; Path 3 would upgrade confidence
-      // but the spec uses payload as Path 2 so we proceed with it)
       const path3 = await verifyViaCognito(token, sluggerUser);
       if (path3) {
         identity = path3;
