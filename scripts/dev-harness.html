@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clubhouse Widget Dev Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; flex-direction: column; height: 100vh; }
+
+    #controls {
+      padding: 12px 16px;
+      background: #16213e;
+      border-bottom: 2px solid #0f3460;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    #controls h1 { font-size: 13px; font-weight: 600; color: #a0c4ff; white-space: nowrap; }
+
+    .control-group { display: flex; align-items: center; gap: 8px; }
+    .control-group label { font-size: 12px; color: #888; white-space: nowrap; }
+
+    select, button {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #0f3460;
+      background: #0f3460;
+      color: #e0e0e0;
+      cursor: pointer;
+    }
+    select:focus, button:focus { outline: 2px solid #a0c4ff; }
+    button:hover { background: #1a4a7a; }
+
+    #status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #0f3460;
+      color: #a0c4ff;
+      margin-left: auto;
+    }
+    #status.ready { background: #1a4a1a; color: #80ff80; }
+    #status.authing { background: #4a3a00; color: #ffd080; }
+    #status.done { background: #1a2a4a; color: #80c8ff; }
+
+    iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <h1>Dev Harness</h1>
+
+  <div class="control-group">
+    <label>Role</label>
+    <select id="role-select">
+      <option value="league">CM (league)</option>
+      <option value="gm">GM (gm)</option>
+      <option value="player">Player (player)</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label>Team</label>
+    <select id="team-select">
+      <option value="1">1 — Long Island Ducks</option>
+      <option value="2">2 — Lancaster Stormers</option>
+      <option value="3">3 — York Revolution</option>
+      <option value="4">4 — Southern Maryland Blue Crabs</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label>User</label>
+    <select id="user-select"></select>
+  </div>
+
+  <button id="reload-btn">Reload Widget</button>
+
+  <span id="status">Waiting…</span>
+</div>
+
+<iframe id="widget" src="http://localhost:3000"></iframe>
+
+<script>
+  // ── Mock users matching seed.sql ───────────────────────────────────────────
+  const MOCK_USERS = {
+    "dev-cm-1": { id: "dev-cm-1", email: "cm1@dev.test",  firstName: "Casey",  lastName: "Morgan",  role: "league", teamId: "1" },
+    "dev-cm-2": { id: "dev-cm-2", email: "cm2@dev.test",  firstName: "Drew",   lastName: "Rivera",  role: "league", teamId: "1" },
+    "dev-gm-1": { id: "dev-gm-1", email: "gm1@dev.test",  firstName: "Taylor", lastName: "Brooks",  role: "gm",     teamId: "1" },
+    "dev-p-1":  { id: "dev-p-1",  email: "p1@dev.test",   firstName: "Jordan", lastName: "Lee",     role: "player", teamId: "1" },
+    "dev-p-2":  { id: "dev-p-2",  email: "p2@dev.test",   firstName: "Marcus", lastName: "Webb",    role: "player", teamId: "1" },
+    "dev-p-3":  { id: "dev-p-3",  email: "p3@dev.test",   firstName: "Carlos", lastName: "Reyes",   role: "player", teamId: "1" },
+    "dev-cm-3": { id: "dev-cm-3", email: "cm3@dev.test",  firstName: "Sam",    lastName: "Nguyen",  role: "league", teamId: "2" },
+    "dev-gm-2": { id: "dev-gm-2", email: "gm2@dev.test",  firstName: "Alex",   lastName: "Kim",     role: "gm",     teamId: "2" },
+    "dev-p-4":  { id: "dev-p-4",  email: "p4@dev.test",   firstName: "Tyler",  lastName: "Moss",    role: "player", teamId: "2" },
+    "dev-p-5":  { id: "dev-p-5",  email: "p5@dev.test",   firstName: "Dante",  lastName: "Fuller",  role: "player", teamId: "2" },
+    "dev-cm-4": { id: "dev-cm-4", email: "cm4@dev.test",  firstName: "Morgan", lastName: "Hayes",   role: "league", teamId: "3" },
+    "dev-gm-3": { id: "dev-gm-3", email: "gm3@dev.test",  firstName: "Chris",  lastName: "Patel",   role: "gm",     teamId: "3" },
+    "dev-cm-5": { id: "dev-cm-5", email: "cm5@dev.test",  firstName: "Jamie",  lastName: "Scott",   role: "league", teamId: "4" },
+    "dev-gm-4": { id: "dev-gm-4", email: "gm4@dev.test",  firstName: "Robin",  lastName: "Walsh",   role: "gm",     teamId: "4" },
+  };
+
+  const USERS_BY_ROLE_TEAM = {};
+  for (const [uid, u] of Object.entries(MOCK_USERS)) {
+    const key = `${u.role}::${u.teamId}`;
+    if (!USERS_BY_ROLE_TEAM[key]) USERS_BY_ROLE_TEAM[key] = [];
+    USERS_BY_ROLE_TEAM[key].push({ uid, ...u });
+  }
+
+  const roleSelect = document.getElementById("role-select");
+  const teamSelect = document.getElementById("team-select");
+  const userSelect = document.getElementById("user-select");
+  const reloadBtn  = document.getElementById("reload-btn");
+  const statusEl   = document.getElementById("status");
+  const iframe     = document.getElementById("widget");
+
+  // ── Populate user dropdown ─────────────────────────────────────────────────
+  function populateUsers() {
+    const role   = roleSelect.value;
+    const teamId = teamSelect.value;
+    const key    = `${role}::${teamId}`;
+    const users  = USERS_BY_ROLE_TEAM[key] ?? [];
+
+    userSelect.innerHTML = "";
+    if (users.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "(no seeded user for this role/team)";
+      userSelect.appendChild(opt);
+    } else {
+      for (const u of users) {
+        const opt = document.createElement("option");
+        opt.value = u.uid;
+        opt.textContent = `${u.firstName} ${u.lastName} (${u.uid})`;
+        userSelect.appendChild(opt);
+      }
+    }
+  }
+
+  roleSelect.addEventListener("change", populateUsers);
+  teamSelect.addEventListener("change", populateUsers);
+  populateUsers();
+
+  // ── Current mock payload ───────────────────────────────────────────────────
+  function buildPayload() {
+    const uid  = userSelect.value;
+    const user = uid ? MOCK_USERS[uid] : null;
+    if (!user) return null;
+
+    return {
+      bootstrapToken: "dev-harness-token",
+      user: { ...user },
+      expiresAt: Date.now() + 3_600_000,
+    };
+  }
+
+  // ── postMessage to widget iframe ───────────────────────────────────────────
+  let pendingPayload = null;
+
+  function sendAuth() {
+    const payload = buildPayload();
+    if (!payload) return;
+    iframe.contentWindow.postMessage({ type: "SLUGGER_AUTH", payload }, "http://localhost:3000");
+    setStatus("done", `Authed as ${payload.user.firstName} ${payload.user.lastName}`);
+  }
+
+  function setStatus(cls, text) {
+    statusEl.className = cls;
+    statusEl.textContent = text;
+  }
+
+  // ── Listen for SLUGGER_WIDGET_READY ───────────────────────────────────────
+  window.addEventListener("message", (event) => {
+    if (event.origin !== "http://localhost:3000") return;
+    if (event.data?.type !== "SLUGGER_WIDGET_READY") return;
+    setStatus("authing", "Widget ready — sending auth…");
+    // Small delay to let widget settle
+    setTimeout(sendAuth, 80);
+  });
+
+  // ── Reload button ──────────────────────────────────────────────────────────
+  reloadBtn.addEventListener("click", () => {
+    setStatus("ready", "Reloading…");
+    iframe.src = iframe.src; // force reload
+  });
+
+  // Initial status
+  setStatus("ready", "Waiting for widget…");
+</script>
+</body>
+</html>

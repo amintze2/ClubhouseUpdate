@@ -1,0 +1,9 @@
+[
+  { "home_team": "Long Island Ducks", "away_team": "Lancaster Stormers", "game_date": "2026-04-01", "game_time": "19:00" },
+  { "home_team": "Long Island Ducks", "away_team": "Lancaster Stormers", "game_date": "2026-04-02", "game_time": "18:30" },
+  { "home_team": "Long Island Ducks", "away_team": "Lancaster Stormers", "game_date": "2026-04-03", "game_time": "19:00" },
+  { "home_team": "Long Island Ducks", "away_team": "York Revolution",    "game_date": "2026-04-06", "game_time": "19:00" },
+  { "home_team": "Long Island Ducks", "away_team": "York Revolution",    "game_date": "2026-04-07", "game_time": "18:00" },
+  { "home_team": "Lancaster Stormers", "away_team": "York Revolution",   "game_date": "2026-04-01", "game_time": "19:00", "is_makeup": false },
+  { "home_team": "Lancaster Stormers", "away_team": "Long Island Ducks", "game_date": "2026-04-01", "game_time": "19:00" }
+]
