@@ -49,6 +49,7 @@ export interface User {
   email: string | null;
   role: UserRole;
   team_id: number;
+  team_name: string | null;
   has_completed_onboarding: boolean;
   created_at: string;
 }

@@ -82,9 +82,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar role={user.role} />
+      <Sidebar role={user.role} userName={user.user_name} teamName={user.team_name ?? null} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Mobile-only profile strip */}
+        <div className="md:hidden flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-white">
+          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold shrink-0">
+            {(user.user_name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join("")}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-gray-900 truncate">{user.user_name ?? "—"}</span>
+            <span className="text-xs text-gray-400 mx-1">·</span>
+            <span className="text-xs text-gray-400">{user.team_name ?? "—"}</span>
+          </div>
+          <span className="text-xs text-gray-400 shrink-0">
+            {user.role === "clubhouse_manager" ? "CM" : user.role === "general_manager" ? "GM" : "Player"}
+          </span>
+        </div>
         <ContactBar />
 
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">

@@ -29,17 +29,48 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   ],
 };
 
+const ROLE_LABEL: Record<UserRole, string> = {
+  clubhouse_manager: "Clubhouse Manager",
+  general_manager: "General Manager",
+  player: "Player",
+};
+
 interface SidebarProps {
   role: UserRole;
+  userName: string | null;
+  teamName: string | null;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+function initials(name: string | null): string {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function Sidebar({ role, userName, teamName }: SidebarProps) {
   const pathname = usePathname();
   const items = NAV_ITEMS[role] ?? [];
 
   return (
     <aside className="hidden md:flex flex-col w-48 shrink-0 border-r border-gray-200 bg-white h-full">
-      <nav className="flex flex-col gap-1 p-2 pt-4">
+      {/* Profile chip */}
+      <div className="px-3 pt-4 pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold shrink-0">
+            {initials(userName)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-gray-900 truncate">{userName ?? "—"}</p>
+            <p className="text-xs text-gray-400 truncate">{teamName ?? "—"}</p>
+            <p className="text-xs text-gray-400">{ROLE_LABEL[role]}</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex flex-col gap-1 p-2 pt-3">
         {items.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
