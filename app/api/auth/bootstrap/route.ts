@@ -183,6 +183,26 @@ export async function POST(req: NextRequest) {
   const supabase = getServiceClient();
   const userName = [identity.firstName, identity.lastName].filter(Boolean).join(" ") || null;
 
+  const teamIdNum = identity.teamId ? Number(identity.teamId) : NaN;
+
+  // If teamId is missing from the payload (happens when Slugger widget-token
+  // endpoint is down and the test account has no team assigned), fall back to
+  // the existing team_id already stored for this user.
+  let resolvedTeamId: number | null = isNaN(teamIdNum) ? null : teamIdNum;
+  if (resolvedTeamId === null) {
+    const { data: existing } = await supabase
+      .from("users")
+      .select("team_id")
+      .eq("slugger_user_id", identity.sluggerUserId)
+      .single();
+    resolvedTeamId = existing?.team_id ?? null;
+    if (resolvedTeamId === null) {
+      console.error("Bootstrap: no teamId in payload and user not found in DB — cannot create user without team_id");
+      return NextResponse.json({ error: "User has no team assigned in Slugger" }, { status: 422 });
+    }
+    console.warn(`Bootstrap: teamId missing from payload for ${identity.email}, using stored team_id ${resolvedTeamId}`);
+  }
+
   const { data: user, error: upsertError } = await supabase
     .from("users")
     .upsert(
@@ -191,7 +211,7 @@ export async function POST(req: NextRequest) {
         user_name: userName,
         email: identity.email,
         role: identity.role,
-        team_id: Number(identity.teamId),
+        team_id: resolvedTeamId,
       },
       { onConflict: "slugger_user_id", ignoreDuplicates: false }
     )
