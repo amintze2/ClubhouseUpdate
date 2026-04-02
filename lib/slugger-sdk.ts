@@ -37,6 +37,7 @@ interface InitSluggerAuthOptions {
 // SLUGGER_STAGING_ORIGIN is optional — set it for staging environment testing.
 const SLUGGER_ALLOWED_ORIGINS: string[] = [
   "https://alpb-analytics.com",
+  "https://www.alpb-analytics.com",
   ...(process.env.SLUGGER_STAGING_ORIGIN
     ? [process.env.SLUGGER_STAGING_ORIGIN]
     : []),
