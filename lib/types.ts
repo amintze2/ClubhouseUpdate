@@ -194,3 +194,16 @@ export interface IssueComment {
   comment: string;
   created_at: string;
 }
+
+export type LeagueContactCategory = "trainer" | "clubhouse_manager" | "league_office" | "other";
+
+export interface LeagueContact {
+  id: number;
+  name: string;
+  role: string;
+  category: LeagueContactCategory;
+  team_name: string | null; // populated for CMs from other teams
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+}

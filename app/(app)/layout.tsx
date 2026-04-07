@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { ContactBar } from "@/components/layout/contact-bar";
 import { DevToolbar } from "@/components/layout/dev-toolbar";
 
 const isDev = process.env.NEXT_PUBLIC_DEV_MODE === "true";
@@ -99,8 +98,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {user.role === "clubhouse_manager" ? "CM" : user.role === "general_manager" ? "GM" : "Player"}
           </span>
         </div>
-        <ContactBar />
-
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
         </main>

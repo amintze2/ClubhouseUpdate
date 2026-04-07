@@ -18,6 +18,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Meal Planning", href: "/meals" },
     { label: "Messages", href: "/messages" },
     { label: "Player Reports", href: "/reports" },
+    { label: "Key Contacts", href: "/key-contacts" },
   ],
   general_manager: [
     { label: "Player Reports", href: "/reports" },
