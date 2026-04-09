@@ -9,8 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.61",
+    "@ai-sdk/react": "^3.0.156",
+    "@openrouter/ai-sdk-provider": "^2.5.1",
     "@supabase/supabase-js": "^2.101.1",
     "@types/jsonwebtoken": "^9.0.10",
+    "ai": "^6.0.154",
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
     "next": "^15.5.14",

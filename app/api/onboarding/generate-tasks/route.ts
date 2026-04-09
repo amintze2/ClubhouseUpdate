@@ -1,82 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { generateTasksStub } from "@/lib/api/onboarding";
-import type { OnboardingAnswers, GeneratedTask, KeyContact } from "@/lib/api/onboarding";
+import type { GeneratedTask } from "@/lib/api/onboarding";
+
+const VALID_CATEGORIES = new Set([
+  "sanitation", "laundry", "food", "equipment",
+  "field", "admin", "medical", "general",
+]);
+const VALID_VISIBILITIES = new Set(["game_day", "off_day", "all"]);
+const VALID_PERIODS = new Set(["morning", "pre_game", "post_game"]);
+
+function normalizeTask(t: Record<string, unknown>): Record<string, unknown> {
+  // Ensure game_day_period is null for non-game-day tasks regardless of what the AI sent
+  if (t.visibility !== "game_day") {
+    return { ...t, game_day_period: null };
+  }
+  return t;
+}
+
+function isValidTask(t: unknown): t is GeneratedTask {
+  if (!t || typeof t !== "object") return false;
+  const task = t as Record<string, unknown>;
+  if (typeof task.title !== "string" || !task.title.trim()) return false;
+  if (!VALID_CATEGORIES.has(task.category as string)) return false;
+  if (!VALID_VISIBILITIES.has(task.visibility as string)) return false;
+  if (task.visibility === "game_day" && !VALID_PERIODS.has(task.game_day_period as string)) return false;
+  return true;
+}
 
 function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, serviceKey);
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 }
 
 export async function POST(req: NextRequest) {
-  let body: Partial<OnboardingAnswers & { user_id: number; team_id: number }>;
+  let body: { user_id?: number; team_id?: number; tasks?: unknown[]; mode?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { user_id, team_id, step1, step2, step3, step4, step5, step6, step7, mode = "replace" } = body;
+  const { user_id, team_id, tasks, mode = "replace" } = body;
 
-  if (!user_id || !team_id || !step1 || !step2 || !step3 || !step4 || !step5 || !step6 || !step7) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!user_id || !team_id || !Array.isArray(tasks)) {
+    return NextResponse.json({ error: "Missing required fields: user_id, team_id, tasks" }, { status: 400 });
   }
 
-  const answers: OnboardingAnswers = { step1, step2, step3, step4, step5, step6, step7, mode };
+  const valid = tasks.filter(isValidTask);
+
+  if (valid.length === 0) {
+    return NextResponse.json({ error: "No valid tasks provided" }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
 
-  // Generate tasks (stub — real Claude call goes here later)
-  const generated: GeneratedTask[] = generateTasksStub(answers);
-
-  // Filter out any tasks with invalid categories (defensive)
-  const validCategories = ["sanitation", "laundry", "food", "equipment", "field", "admin", "medical", "general"];
-  const valid = generated.filter((t) => validCategories.includes(t.category));
-
-  // Replace mode: delete existing recurring tasks for this user
   if (mode === "replace") {
     await supabase.from("recurring_tasks").delete().eq("user_id", user_id);
   }
 
-  // Bulk insert generated tasks
-  let createdTasks: unknown[] = [];
-  if (valid.length > 0) {
-    const { data, error } = await supabase
-      .from("recurring_tasks")
-      .insert(valid.map((t) => ({ ...t, user_id })))
-      .select();
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    createdTasks = data ?? [];
+  const { data, error } = await supabase
+    .from("recurring_tasks")
+    .insert(valid.map((t) => ({ ...normalizeTask(t as unknown as Record<string, unknown>), user_id })))
+    .select();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Upsert key contacts (non-empty names only)
-  const createdContacts: unknown[] = [];
-  if (step7.contacts) {
-    for (const kc of step7.contacts as KeyContact[]) {
-      if (!kc.name.trim()) continue;
-      const { data } = await supabase
-        .from("contacts")
-        .insert({
-          team_id,
-          contact_name: kc.name.trim(),
-          contact_role: kc.label,
-          phone: kc.phone.trim() || null,
-          email: kc.email.trim() || null,
-          notes: null,
-          display_order: 0,
-          created_by: user_id,
-        })
-        .select()
-        .single();
-      if (data) createdContacts.push(data);
-    }
-  }
-
-  // Mark onboarding complete
   await supabase.from("users").update({ has_completed_onboarding: true }).eq("id", user_id);
 
-  return NextResponse.json({ tasks: createdTasks, contacts: createdContacts });
+  return NextResponse.json({ tasks: data ?? [] });
 }
