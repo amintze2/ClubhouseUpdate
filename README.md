@@ -96,11 +96,12 @@ The widget is registered there pointing at `https://clubhouse-ten-lovat.vercel.a
 
 ### To test with real Slugger auth (no dev mode)
 
-1. Make sure `NEXT_PUBLIC_DEV_MODE` is **not set** in Vercel production:
+1. Make sure `NEXT_PUBLIC_DEV_MODE` is **not set** in Vercel production. If it is set, remove it and redeploy:
    ```bash
    vercel env rm NEXT_PUBLIC_DEV_MODE production --yes
    vercel --prod
    ```
+   If you get `Environment Variable was not found`, it's already unset — no action needed.
 
 2. Open the Slugger staging URL above and navigate to the Clubhouse Management widget.
 
