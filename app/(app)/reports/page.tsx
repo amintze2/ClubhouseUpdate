@@ -9,19 +9,6 @@ export default function ReportsPage() {
 
   if (!user) return null;
 
-  if (user.role === "clubhouse_manager") {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h1 className="text-xl font-semibold text-gray-900">Player Reports</h1>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <CMReportsView />
-        </div>
-      </div>
-    );
-  }
-
   if (user.role === "general_manager") {
     return (
       <div className="flex flex-col h-full">
