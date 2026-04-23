@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -22,7 +22,7 @@ function defaultRoute(role: string): string {
   return "/checklists";
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isAuthenticated, error } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -118,5 +118,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {isDev && <DevToolbar />}
     </div>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="text-gray-500 text-sm">Authenticating…</div></div>}>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </Suspense>
   );
 }
