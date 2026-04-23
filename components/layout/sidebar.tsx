@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/lib/types";
 
 interface NavItem {
@@ -52,6 +52,7 @@ function initials(name: string | null): string {
 
 export function Sidebar({ role, userName, teamName }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const items = NAV_ITEMS[role] ?? [];
 
   return (
@@ -70,7 +71,7 @@ export function Sidebar({ role, userName, teamName }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="flex flex-col gap-1 p-2 pt-3">
+      <nav className="flex flex-col gap-1 p-2 pt-3 flex-1">
         {items.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
@@ -89,6 +90,17 @@ export function Sidebar({ role, userName, teamName }: SidebarProps) {
           );
         })}
       </nav>
+
+      {role === "clubhouse_manager" && (
+        <div className="p-2 border-t border-gray-100">
+          <button
+            onClick={() => router.push("/onboarding?rerun=1&mode=replace")}
+            className="w-full text-left rounded-md px-3 py-2 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          >
+            Re-run Setup
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

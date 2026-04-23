@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -26,12 +26,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isAuthenticated, error } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isRerun = searchParams.get("rerun") === "1";
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
       if (user.role === "clubhouse_manager" && !user.has_completed_onboarding) {
         router.replace("/onboarding");
-      } else if (pathname === "/onboarding") {
+      } else if (pathname === "/onboarding" && !isRerun) {
         router.replace(defaultRoute(user.role));
       } else if (
         user.role !== "clubhouse_manager" &&
@@ -68,8 +70,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Onboarding-incomplete CM — show wizard without sidebar; return null while redirect fires
-  if (user.role === "clubhouse_manager" && !user.has_completed_onboarding) {
+  // Onboarding-incomplete CM (or rerun) — show wizard without sidebar; return null while redirect fires
+  if (user.role === "clubhouse_manager" && (!user.has_completed_onboarding || isRerun)) {
     if (pathname !== "/onboarding") return null;
     return (
       <>
@@ -94,9 +96,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="text-xs text-gray-400 mx-1">·</span>
             <span className="text-xs text-gray-400">{user.team_name ?? "—"}</span>
           </div>
-          <span className="text-xs text-gray-400 shrink-0">
-            {user.role === "clubhouse_manager" ? "CM" : user.role === "general_manager" ? "GM" : "Player"}
-          </span>
+          {user.role === "clubhouse_manager" ? (
+            <button
+              onClick={() => router.push("/onboarding?rerun=1&mode=replace")}
+              className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
+            >
+              Re-run Setup
+            </button>
+          ) : (
+            <span className="text-xs text-gray-400 shrink-0">
+              {user.role === "general_manager" ? "GM" : "Player"}
+            </span>
+          )}
         </div>
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
