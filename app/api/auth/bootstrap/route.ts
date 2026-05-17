@@ -53,10 +53,14 @@ async function verifyViaSluggerApi(
     const res = await fetch("https://alpb-analytics.com/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.warn(`[slugger-auth] /api/users/me ${res.status}: ${errText}`);
+      return null;
+    }
 
     const body = await res.json();
-    console.log("Slugger /api/users/me response:", JSON.stringify(body));
+    console.log("[slugger-auth] /api/users/me response:", JSON.stringify(body));
     // Response shape: { success: true, data: { id, email, role, teamRole, ... } }
     const u = body.data ?? body;
     return {
@@ -139,6 +143,20 @@ export async function POST(req: NextRequest) {
   }
 
   const { token, sluggerUser } = body;
+
+  // Log exactly what Slugger sends so we can confirm team identifiers line up
+  // with our `teams` table (or define a mapping if they don't).
+  console.log("[slugger-auth] incoming sluggerUser:", JSON.stringify(sluggerUser));
+  console.log("[slugger-auth] incoming token present:", Boolean(token));
+  if (token) {
+    try {
+      const claims = decodeJwt(token);
+      console.log("[slugger-auth] bootstrapToken claims:", JSON.stringify(claims));
+    } catch (e) {
+      console.warn("[slugger-auth] failed to decode bootstrapToken:", e);
+    }
+  }
+
   if (!sluggerUser) {
     return NextResponse.json({ error: "Missing sluggerUser" }, { status: 400 });
   }
