@@ -201,24 +201,36 @@ export async function POST(req: NextRequest) {
   const supabase = getServiceClient();
   const userName = [identity.firstName, identity.lastName].filter(Boolean).join(" ") || null;
 
-  const teamIdNum = identity.teamId ? Number(identity.teamId) : NaN;
-
-  // If teamId is missing from the payload (happens when Slugger widget-token
-  // endpoint is down and the test account has no team assigned), fall back to
-  // the existing team_id already stored for this user.
-  // Fallback team used when Slugger sends no teamId (e.g. widget-token endpoint
-  // down, or test account with no team assigned in Slugger).
+  // Slugger sends teamId as a UUID; dev-mode mocks send a numeric string that
+  // already matches our internal teams.id. Try numeric first, then UUID lookup.
   const FALLBACK_TEAM_ID = 11; // "Test Team"
 
-  let resolvedTeamId: number | null = isNaN(teamIdNum) ? null : teamIdNum;
+  let resolvedTeamId: number | null = null;
+  if (identity.teamId) {
+    const asNum = Number(identity.teamId);
+    if (Number.isInteger(asNum) && asNum > 0) {
+      resolvedTeamId = asNum;
+    } else {
+      const { data: team } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("slugger_team_id", identity.teamId)
+        .maybeSingle();
+      resolvedTeamId = team?.id ?? null;
+      if (resolvedTeamId === null) {
+        console.warn(`[slugger-auth] no teams row for slugger_team_id=${identity.teamId} (${identity.email})`);
+      }
+    }
+  }
+
   if (resolvedTeamId === null) {
     const { data: existing } = await supabase
       .from("users")
       .select("team_id")
       .eq("slugger_user_id", identity.sluggerUserId)
-      .single();
+      .maybeSingle();
     resolvedTeamId = existing?.team_id ?? FALLBACK_TEAM_ID;
-    console.warn(`Bootstrap: teamId missing from payload for ${identity.email}, using team_id ${resolvedTeamId}`);
+    console.warn(`[slugger-auth] teamId unresolved for ${identity.email}, using team_id ${resolvedTeamId}`);
   }
 
   const { data: user, error: upsertError } = await supabase
