@@ -53,14 +53,9 @@ async function verifyViaSluggerApi(
     const res = await fetch("https://alpb-analytics.com/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.warn(`[slugger-auth] /api/users/me ${res.status}: ${errText}`);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const body = await res.json();
-    console.log("[slugger-auth] /api/users/me response:", JSON.stringify(body));
     // Response shape: { success: true, data: { id, email, role, teamRole, ... } }
     const u = body.data ?? body;
     return {
@@ -143,25 +138,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { token, sluggerUser } = body;
-
-  // Log exactly what Slugger sends so we can confirm team identifiers line up
-  // with our `teams` table (or define a mapping if they don't).
-  console.log("[slugger-auth] incoming sluggerUser:", JSON.stringify(sluggerUser));
-  console.log("[slugger-auth] incoming token present:", Boolean(token));
-  if (token) {
-    try {
-      const claims = decodeJwt(token);
-      console.log("[slugger-auth] bootstrapToken claims:", JSON.stringify(claims));
-    } catch (e) {
-      console.warn("[slugger-auth] failed to decode bootstrapToken:", e);
-    }
-  }
-
   if (!sluggerUser) {
     return NextResponse.json({ error: "Missing sluggerUser" }, { status: 400 });
-  }
-  if (!token) {
-    console.warn("Bootstrap called without a token — Slugger widget-token endpoint may be down. Falling back to payload.");
   }
 
   const jwtSecret = process.env.SUPABASE_JWT_SECRET;
@@ -217,9 +195,6 @@ export async function POST(req: NextRequest) {
         .eq("slugger_team_id", identity.teamId)
         .maybeSingle();
       resolvedTeamId = team?.id ?? null;
-      if (resolvedTeamId === null) {
-        console.warn(`[slugger-auth] no teams row for slugger_team_id=${identity.teamId} (${identity.email})`);
-      }
     }
   }
 
@@ -230,7 +205,6 @@ export async function POST(req: NextRequest) {
       .eq("slugger_user_id", identity.sluggerUserId)
       .maybeSingle();
     resolvedTeamId = existing?.team_id ?? FALLBACK_TEAM_ID;
-    console.warn(`[slugger-auth] teamId unresolved for ${identity.email}, using team_id ${resolvedTeamId}`);
   }
 
   const { data: user, error: upsertError } = await supabase
