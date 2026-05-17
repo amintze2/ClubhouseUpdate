@@ -203,17 +203,27 @@ export async function ensureBulletinMembership(
   if (error) throw error;
 }
 
+// Real ALPB teams. Users on these teams can only message each other; test/JHU
+// users (team_id outside 1-10) can message anyone, so testers can drive
+// real-team flows end-to-end.
+const REAL_TEAM_MIN = 1;
+const REAL_TEAM_MAX = 10;
+
 export async function getTeammates(
   supabase: SupabaseClient,
   teamId: number,
   excludeUserId: number
 ): Promise<Pick<User, "id" | "user_name" | "role">[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("users")
     .select("id, user_name, role")
-    .eq("team_id", teamId)
-    .neq("id", excludeUserId)
-    .order("user_name");
+    .neq("id", excludeUserId);
+
+  if (teamId >= REAL_TEAM_MIN && teamId <= REAL_TEAM_MAX) {
+    query = query.gte("team_id", REAL_TEAM_MIN).lte("team_id", REAL_TEAM_MAX);
+  }
+
+  const { data, error } = await query.order("user_name");
   if (error) throw error;
   return (data ?? []) as any[];
 }
